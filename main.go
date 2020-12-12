@@ -21,19 +21,29 @@ func main()  {
 	var (
 		err error
 		env string
+		force bool
 	)
 
-	if !shouldClock() {
-		log.Println("今日不打卡")
-		return
-	}
+
 
 	if len(os.Args)> 1 {
 		env=os.Args[1]
 	}
 
-	if env== "pro" {
-		randSleep()
+	if len(os.Args)> 2 {
+		force=os.Args[2]=="true"
+	}
+
+	if !force {
+		//非强制打卡，走这两个流程
+		if !shouldClock() {
+			log.Println("今日不打卡")
+			return
+		}
+
+		if env== "pro" {
+			randSleep()
+		}
 	}
 
 	if err=core.Run(env);err!= nil {
