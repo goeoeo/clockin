@@ -115,7 +115,7 @@ func randSleep()  {
 	morning:=time.Now().Hour()<12
 
 	if morning {
-		randM=rand.Intn(15)
+		randM=rand.Intn(10)
 	}else{
 		randM=rand.Intn(5)
 	}

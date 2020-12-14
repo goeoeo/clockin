@@ -80,7 +80,6 @@ func Run(env string) (err error) {
 
 //检查屏幕是否被点亮
 func lightUp()  bool{
-	imageControl:=new(image.ImageControl)
 
 	for {
 
@@ -91,9 +90,7 @@ func lightUp()  bool{
 			return false
 		}
 
-		imageControl.Trimming("data/screen.png","data/blackscreen_tmp.png",0,1400,750,150)
-
-		cos,err:=imgo.CosineSimilarity("data/blackscreen_tmp.png","data/blackscreen.png")
+		cos,err:=imgo.CosineSimilarity("data/screen.png","data/blackscreen.png")
 		if err != nil {
 			fmt.Println(err)
 			return false
@@ -101,6 +98,7 @@ func lightUp()  bool{
 
 		if int(cos)== 1 {
 			//未被点亮
+			fmt.Println()
 
 			//亮屏
 			cmd := adbCommand("shell input keyevent 26")
@@ -108,6 +106,7 @@ func lightUp()  bool{
 			if _, err:= cmd.CombinedOutput(); err != nil {
 				return false
 			}
+
 
 			continue
 		}
