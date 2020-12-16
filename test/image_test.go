@@ -9,7 +9,7 @@ import (
 
 func TestImage(t *testing.T)  {
 	imageControl:=new(image.ImageControl)
-	imageControl.Trimming("/home/yu/code/clockin/data/screen.png","/home/yu/code/clockin/b.png",0,1400,750,150)
+	imageControl.Trimming("/home/yu/code/clockin/data/screen.png","/home/yu/code/clockin/data/bluetooth.png",0,1400,750,750)
 }
 
 func TestImage1(t *testing.T)  {
