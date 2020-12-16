@@ -4,54 +4,53 @@ import (
 	"fmt"
 	"github.com/Comdex/imgo"
 	"github.com/phpdi/ant/image"
-	"io"
 	"log"
-	"os"
 	"os/exec"
 	"time"
 )
 
-const adb = "/home/yu/DevTools/Android/platform-tools/adb"
+const (
+	adb       = "/home/yu/DevTools/Android/platform-tools/adb"
+	runEnvPro = "pro"
+)
 
 //模拟命令
 var (
 	clockinCmds = []clockinCmd{
-		{"",printf("点亮屏幕"),"", lightUp},  //点亮屏幕
-		{"",printf("进入主页"),"shell input keyevent 3", nil},   //进入主页
-		{"",printf("进入钉钉"),"shell input tap 670 769", sleep(10)},  //进入钉钉
-		{"",printf("检查是否需要登录"),"", isLogin},  //检查是否需要登录
-		{"",printf("钉钉-工作台"),"shell input tap 530 1840", sleep(5)}, //钉钉-工作台
-		{"",printf("钉钉-工作台-考勤打卡"),"shell input tap 977 1612", sleep(5)}, //钉钉-工作台-考勤打卡
-		{"",printf("等待蓝牙连接"),"",waitBluetooth},
-		{"pro",printf("打卡"),"shell input tap 530 1162",nil},//打卡
-		{"pro",printf("打卡后截图，发邮件"),"shell input tap 533 1843",mail},//打卡后截图，发邮件
-		{"",printf("返回"),"shell input keyevent 4", nil},   //返回
-		{"",printf("返回"),"shell input keyevent 4", nil},   //返回
-		{"",printf("返回"),"shell input keyevent 4", nil},   //返回
-		{"",printf("熄屏"),"shell input keyevent 26", nil},   //熄屏
+		{"", printf("点亮屏幕"), "", lightUp},                                 //点亮屏幕
+		{"", printf("进入主页"), "shell input keyevent 3", nil},               //进入主页
+		{"", printf("进入钉钉"), "shell input tap 670 769", sleep(10)},        //进入钉钉
+		{"", printf("检查是否需要登录"), "", isLogin},                             //检查是否需要登录
+		{"", printf("钉钉-工作台"), "shell input tap 530 1840", sleep(5)},      //钉钉-工作台
+		{"", printf("钉钉-工作台-考勤打卡"), "shell input tap 977 1612", sleep(5)}, //钉钉-工作台-考勤打卡
+		{"", printf("等待蓝牙连接"), "", waitBluetooth},
+		{"pro", printf("打卡"), "", clockin},                             //打卡
+		{"pro", printf("打卡后截图，发邮件"), "shell input tap 533 1843", mail}, //打卡后截图，发邮件
+		{"", printf("返回"), "shell input keyevent 4", nil},              //返回
+		{"", printf("返回"), "shell input keyevent 4", nil},              //返回
+		{"", printf("返回"), "shell input keyevent 4", nil},              //返回
+		{"", printf("熄屏"), "shell input keyevent 26", nil},             //熄屏
 
 	}
+	runEnv = "" //环境
 
 )
-
 
 type (
 	clockinCmd struct {
-		env string
-		before func()bool
+		env       string
+		before    func() bool
 		cmdString string
-		after func()bool
+		after     func() bool
 	}
 )
 
-func init()  {
-
-}
-
 func Run(env string) (err error) {
+	runEnv = env
+
 	for _, v := range clockinCmds {
 		//检查指令环境
-		if v.env!= "" && v.env!=env {
+		if v.env != "" && v.env != env {
 			continue
 		}
 
@@ -79,34 +78,32 @@ func Run(env string) (err error) {
 }
 
 //检查屏幕是否被点亮
-func lightUp()  bool{
+func lightUp() bool {
 
 	for {
 
-
 		cmd := adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
 
-		if _, err:= cmd.CombinedOutput(); err != nil {
+		if _, err := cmd.CombinedOutput(); err != nil {
 			return false
 		}
 
-		cos,err:=imgo.CosineSimilarity("data/screen.png","data/blackscreen.png")
+		cos, err := imgo.CosineSimilarity("data/screen.png", "data/blackscreen.png")
 		if err != nil {
 			fmt.Println(err)
 			return false
 		}
 
-		if int(cos)== 1 {
+		if int(cos) == 1 {
 			//未被点亮
 			fmt.Println()
 
 			//亮屏
 			cmd := adbCommand("shell input keyevent 26")
 
-			if _, err:= cmd.CombinedOutput(); err != nil {
+			if _, err := cmd.CombinedOutput(); err != nil {
 				return false
 			}
-
 
 			continue
 		}
@@ -121,37 +118,41 @@ func lightUp()  bool{
 
 //等待蓝牙连接
 func waitBluetooth() bool {
-	imageControl:=new(image.ImageControl)
+	imageControl := new(image.ImageControl)
 
 	for {
+
+		if !effectiveTime() && runEnv == runEnvPro {
+			return true
+		}
 
 		//触摸一下防止熄屏
 		cmd := adbCommand("shell input tap 870 870")
 
-		if _, err:= cmd.CombinedOutput(); err != nil {
+		if _, err := cmd.CombinedOutput(); err != nil {
 			return false
 		}
 
 		cmd = adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
 
-		if _, err:= cmd.CombinedOutput(); err != nil {
+		if _, err := cmd.CombinedOutput(); err != nil {
 			return false
 		}
 
-		imageControl.Trimming("data/screen.png","data/bluetooth_tmp.png",0,1400,750,750)
+		imageControl.Trimming("data/screen.png", "data/bluetooth_tmp.png", 400, 1400, 350, 750)
 
-		cos,err:=imgo.CosineSimilarity("data/bluetooth.png","data/bluetooth_tmp.png")
+		cos, err := imgo.CosineSimilarity("data/bluetooth.png", "data/bluetooth_tmp.png")
 		if err != nil {
 			fmt.Println(err)
 			return false
 		}
 
-		if int(cos)== 1 {
+		if int(cos) == 1 {
 			break
 		}
 
-		log.Println("相识度:",cos)
-		time.Sleep(2*time.Second)
+		log.Println("相识度:", cos)
+		time.Sleep(2 * time.Second)
 
 	}
 
@@ -160,88 +161,85 @@ func waitBluetooth() bool {
 
 //登录检测
 func isLogin() bool {
-	imageControl:=new(image.ImageControl)
+	imageControl := new(image.ImageControl)
 	cmd := adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
 
-	if _, err:= cmd.CombinedOutput(); err != nil {
-		log.Println("err;",err.Error())
+	if _, err := cmd.CombinedOutput(); err != nil {
+		log.Println("err;", err.Error())
 		return false
 	}
 
-	imageControl.Trimming("data/screen.png","data/login_tmp.png",0,900,1500,150)
+	imageControl.Trimming("data/screen.png", "data/login_tmp.png", 0, 900, 1500, 150)
 
-
-	cos,err:=imgo.CosineSimilarity("data/login.png","data/login_tmp.png")
+	cos, err := imgo.CosineSimilarity("data/login.png", "data/login_tmp.png")
 	if err != nil {
 		log.Println(err)
 		return false
 	}
 
-	if int(cos)== 1 {
+	if int(cos) == 1 {
 		//需要登录
 		log.Println("需要登录")
 		login()
-		time.Sleep(5*time.Second)
+		time.Sleep(5 * time.Second)
 	}
-
 
 	return true
 }
 
-
 //执行登录
-func login()  {
+func login() {
 
 	//focus
 	cmd := adbCommand("shell input tap 534 817")
 
-	if _, err:= cmd.CombinedOutput(); err != nil {
-		fmt.Println("err;",err.Error())
+	if _, err := cmd.CombinedOutput(); err != nil {
+		fmt.Println("err;", err.Error())
 	}
 
 	//password
 	cmd = adbCommand(`shell input text "chenyu977564830"`)
 
-	if _, err:= cmd.CombinedOutput(); err != nil {
-		log.Println("err;",err.Error())
+	if _, err := cmd.CombinedOutput(); err != nil {
+		log.Println("err;", err.Error())
 	}
 
 	//login
 
 	cmd = adbCommand("shell input tap 520 1010")
 
-	if _, err:= cmd.CombinedOutput(); err != nil {
-		log.Println("err;",err.Error())
+	if _, err := cmd.CombinedOutput(); err != nil {
+		log.Println("err;", err.Error())
 	}
 
-
-
-
 }
-
 
 //adb命令
 func adbCommand(cmd string) *exec.Cmd {
 	return exec.Command("/bin/bash", "-c", fmt.Sprintf("%s %s", adb, cmd))
 }
 
-
-func sleep(i int) func()bool  {
+func sleep(i int) func() bool {
 	return func() bool {
-		time.Sleep(time.Duration(i)*time.Second)
+		time.Sleep(time.Duration(i) * time.Second)
 		return true
 	}
 }
 
-func mail()bool  {
-	time.Sleep(5*time.Second)
-	cmd := adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
+func mail() bool {
 
-	if _, err:= cmd.CombinedOutput(); err != nil {
-		log.Println("err;",err.Error())
+	if !effectiveTime() {
+		return true
 	}
 
-	err:=SendMail("打卡通知","data/screen.png")
+	time.Sleep(5 * time.Second)
+	cmd := adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
+
+	if _, err := cmd.CombinedOutput(); err != nil {
+		log.Println("err;", err.Error())
+	}
+
+	err := SendMail("打卡通知", "data/screen.png")
 	if err != nil {
 		log.Println(err)
 	}
@@ -249,30 +247,33 @@ func mail()bool  {
 	return true
 }
 
-func printf(params string) func()bool {
-	return func()bool {
+func printf(params string) func() bool {
+	return func() bool {
 		log.Println(params)
 		return true
 	}
 }
 
+func clockin() bool {
 
-func func_log2fileAndStdout() {
-	//创建日志文件
-	f, err := os.OpenFile("log/clockin.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
+	if !effectiveTime() {
+		return true
 	}
-	//完成后，延迟关闭
-	defer f.Close()
-	// 设置日志输出到文件
-	// 定义多个写入器
-	writers := []io.Writer{
-		f,
-		os.Stdout}
-	fileAndStdoutWriter := io.MultiWriter(writers...)
-	// 创建新的log对象
-	logger := log.New(fileAndStdoutWriter, "", log.Ldate|log.Ltime|log.Lshortfile)
-	// 使用新的log对象，写入日志内容
-	logger.Println("--> logger :  check to make sure it works")
+
+	//9点半以前，
+	cmd := adbCommand("shell input tap 530 1162")
+
+	if _, err := cmd.CombinedOutput(); err != nil {
+		log.Println("err;", err.Error())
+	}
+
+	return true
+
+}
+
+//有效的打卡时间
+func effectiveTime() bool {
+	h := time.Now().Hour()
+	m := time.Now().Minute()
+	return (h <= 9 && m <= 30) || (h >= 18 && m >= 30)
 }

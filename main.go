@@ -11,27 +11,25 @@ import (
 )
 
 type clockDay struct {
-	Do []string
+	Do  []string
 	Not []string
 }
 
 //go build -o clockinbin main.go
-func main()  {
+func main() {
 
 	var (
-		err error
-		env string
+		err   error
+		env   string
 		force bool
 	)
 
-
-
-	if len(os.Args)> 1 {
-		env=os.Args[1]
+	if len(os.Args) > 1 {
+		env = os.Args[1]
 	}
 
-	if len(os.Args)> 2 {
-		force=os.Args[2]=="true"
+	if len(os.Args) > 2 {
+		force = os.Args[2] == "true"
 	}
 
 	if !force {
@@ -41,28 +39,28 @@ func main()  {
 			return
 		}
 
-		if env== "pro" {
+		if env == "pro" {
 			randSleep()
 		}
 	}
 
-	if err=core.Run(env);err!= nil {
+	if err = core.Run(env); err != nil {
 		log.Println(err)
 	}
 }
 
-func loadConfig() (res clockDay)  {
+func loadConfig() (res clockDay) {
 	var (
-		c []byte
+		c   []byte
 		err error
 	)
-	if c,err=ioutil.ReadFile("data/clockday.json");err!= nil {
+	if c, err = ioutil.ReadFile("data/clockday.json"); err != nil {
 		log.Println(err)
 		return
 	}
 
-	if len(c)> 0 {
-		if err=json.Unmarshal(c,&res);err!= nil {
+	if len(c) > 0 {
+		if err = json.Unmarshal(c, &res); err != nil {
 			log.Println(err)
 		}
 	}
@@ -71,9 +69,9 @@ func loadConfig() (res clockDay)  {
 
 }
 
-func in(s string, ss []string)bool  {
-	for _,v:=range ss {
-		if s== v {
+func in(s string, ss []string) bool {
+	for _, v := range ss {
+		if s == v {
 			return true
 		}
 	}
@@ -81,25 +79,24 @@ func in(s string, ss []string)bool  {
 }
 
 //判定是否应该打卡
-func shouldClock()  bool {
+func shouldClock() bool {
 	var (
 		today string
-		day clockDay
-
+		day   clockDay
 	)
 
-	today=time.Now().Format("2006-01-02")
+	today = time.Now().Format("2006-01-02")
 
-	day=loadConfig()
+	day = loadConfig()
 
-	if in(today,day.Do) {
+	if in(today, day.Do) {
 		return true
 	}
 
-	weekDay:=time.Now().Weekday()
-	if weekDay!=time.Sunday && weekDay!=time.Saturday {
+	weekDay := time.Now().Weekday()
+	if weekDay != time.Sunday && weekDay != time.Saturday {
 		//当前是周一到周五
-		if !in(today,day.Not) {
+		if !in(today, day.Not) {
 			return true
 		}
 	}
@@ -107,20 +104,19 @@ func shouldClock()  bool {
 	return false
 }
 
-
 //随机睡眠
-func randSleep()  {
+func randSleep() {
 	rand.Seed(time.Now().Unix())
-	randM:=0
-	morning:=time.Now().Hour()<12
+	randM := 0
+	morning := time.Now().Hour() < 12
 
 	if morning {
-		randM=rand.Intn(10)
-	}else{
-		randM=rand.Intn(5)
+		randM = rand.Intn(10)
+	} else {
+		randM = rand.Intn(1)
 	}
 
-	log.Println("随机睡眠时间:",randM)
+	log.Println("随机睡眠时间:", randM)
 
-	time.Sleep(time.Duration(randM)*time.Minute)
+	time.Sleep(time.Duration(randM) * time.Minute)
 }
