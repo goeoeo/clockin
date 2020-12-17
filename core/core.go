@@ -96,8 +96,6 @@ func lightUp() bool {
 
 		if int(cos) == 1 {
 			//未被点亮
-			fmt.Println()
-
 			//亮屏
 			cmd := adbCommand("shell input keyevent 26")
 
@@ -123,7 +121,7 @@ func waitBluetooth() bool {
 	for {
 
 		if !effectiveTime() && runEnv == runEnvPro {
-			return true
+			return false
 		}
 
 		//触摸一下防止熄屏
@@ -139,19 +137,32 @@ func waitBluetooth() bool {
 			return false
 		}
 
-		imageControl.Trimming("data/screen.png", "data/bluetooth_tmp.png", 400, 1400, 350, 750)
+		//上午判定
+		imageControl.Trimming("data/screen.png", "data/bluetooth_tmp.png", 400, 1300, 350, 350)
 
-		cos, err := imgo.CosineSimilarity("data/bluetooth.png", "data/bluetooth_tmp.png")
+		cos, err := imgo.CosineSimilarity("data/bluetooth_start.png", "data/bluetooth_tmp.png")
 		if err != nil {
 			fmt.Println(err)
 			return false
 		}
-
 		if int(cos) == 1 {
 			break
 		}
-
 		log.Println("相识度:", cos)
+
+		//下午判定
+		imageControl.Trimming("data/screen.png", "data/bluetooth_tmp.png", 400, 1400, 350, 750)
+
+		cos, err = imgo.CosineSimilarity("data/bluetooth_end.png", "data/bluetooth_tmp.png")
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+		if int(cos) == 1 {
+			break
+		}
+		log.Println("相识度:", cos)
+
 		time.Sleep(2 * time.Second)
 
 	}
@@ -228,10 +239,6 @@ func sleep(i int) func() bool {
 
 func mail() bool {
 
-	if !effectiveTime() {
-		return true
-	}
-
 	time.Sleep(5 * time.Second)
 	cmd := adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
 
@@ -256,10 +263,6 @@ func printf(params string) func() bool {
 
 func clockin() bool {
 
-	if !effectiveTime() {
-		return true
-	}
-
 	//9点半以前，
 	cmd := adbCommand("shell input tap 530 1162")
 
@@ -275,5 +278,18 @@ func clockin() bool {
 func effectiveTime() bool {
 	h := time.Now().Hour()
 	m := time.Now().Minute()
-	return (h <= 9 && m <= 30) || (h >= 18 && m >= 30)
+
+	switch {
+	case h < 9: //9点以前
+		return true
+	case h == 9 && m <= 30: //9点到9点半
+		return true
+	case h > 18: //6点以后
+		return true
+	case h == 18 && m >= 30: //6点半以后
+		return true
+	}
+
+	return false
+
 }

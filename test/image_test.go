@@ -12,9 +12,14 @@ func TestImage(t *testing.T) {
 	imageControl.Trimming("/home/yu/code/clockin/data/screen.png", "/home/yu/code/clockin/data/bluetooth.png", 400, 1400, 350, 750)
 }
 
-func TestImage1(t *testing.T) {
+func TestImage_end(t *testing.T) {
 	imageControl := new(image.ImageControl)
-	imageControl.Trimming("/home/yu/code/clockin/data/screen.png", "/home/yu/code/clockin/data/login.png", 0, 900, 1500, 150)
+	imageControl.Trimming("/home/yu/code/clockin/data/screen.png", "/home/yu/code/clockin/data/bluetooth.png", 400, 1400, 350, 750)
+}
+
+func TestImage_start(t *testing.T) {
+	imageControl := new(image.ImageControl)
+	imageControl.Trimming("/home/yu/code/clockin/data/screen.png", "/home/yu/code/clockin/data/bluetooth_start.png", 400, 1300, 350, 350)
 }
 
 func TestCosineSimilarity(t *testing.T) {
