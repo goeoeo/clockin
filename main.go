@@ -1,122 +1,67 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/phpdi/clockin/core"
-	"io/ioutil"
-	"log"
-	"math/rand"
+	"net/http"
 	"os"
+	"os/exec"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
-type clockDay struct {
-	Do  []string
-	Not []string
-}
-
 //go build -o clockinbin main.go
 func main() {
-
-	var (
-		err   error
-		env   string
-		force bool
-	)
-
-	if len(os.Args) > 1 {
-		env = os.Args[1]
-	}
-
-	if len(os.Args) > 2 {
-		force = os.Args[2] == "true"
-	}
-
-	if !force {
-		//非强制打卡，走这两个流程
-		if !shouldClock() {
-			log.Println("今日不打卡")
-			return
-		}
-
-		if env == "pro" {
-			randSleep()
-		}
-	}
-
-	if err = core.Run(env); err != nil {
-		log.Println(err)
-	}
-}
-
-func loadConfig() (res clockDay) {
-	var (
-		c   []byte
-		err error
-	)
-	if c, err = ioutil.ReadFile("data/clockday.json"); err != nil {
-		log.Println(err)
-		return
-	}
-
-	if len(c) > 0 {
-		if err = json.Unmarshal(c, &res); err != nil {
-			log.Println(err)
-		}
-	}
-
-	return
+	httpServer()
 
 }
 
-func in(s string, ss []string) bool {
-	for _, v := range ss {
-		if s == v {
-			return true
-		}
+func httpServer() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/clockin", clockin)
+
+	server := &http.Server{
+		Addr:         "127.0.0.1:8122",
+		Handler:      mux,
+		WriteTimeout: time.Second * 3,
 	}
-	return false
+
+	go server.ListenAndServe()
+	go npc()
+
+	c := make(chan os.Signal)
+
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGUSR1, syscall.SIGUSR2)
+
+	<-c
+
+	fmt.Println("进程已退出")
 }
 
-//判定是否应该打卡
-func shouldClock() bool {
-	var (
-		today string
-		day   clockDay
-	)
+//监听执行打卡程序
+func clockin(w http.ResponseWriter, r *http.Request) {
 
-	today = time.Now().Format("2006-01-02")
+	key := r.URL.Query().Get("key")
 
-	day = loadConfig()
-
-	if in(today, day.Do) {
-		return true
+	switch key {
+	case "test":
+		go func() {
+			core.Run("")
+		}()
+	case "pro":
+		go func() {
+			core.Run("pro")
+		}()
 	}
 
-	weekDay := time.Now().Weekday()
-	if weekDay != time.Sunday && weekDay != time.Saturday {
-		//当前是周一到周五
-		if !in(today, day.Not) {
-			return true
-		}
-	}
-
-	return false
+	w.Write([]byte("success"))
 }
 
-//随机睡眠
-func randSleep() {
-	rand.Seed(time.Now().Unix())
-	randM := 0
-	morning := time.Now().Hour() < 12
-
-	if morning {
-		randM = rand.Intn(10)
-	} else {
-		randM = rand.Intn(1)
+//内网穿透工具
+func npc() {
+	cmnd := exec.Command("./npc.sh")
+	if err := cmnd.Start(); err != nil {
+		fmt.Println("npc:", err)
 	}
-
-	log.Println("随机睡眠时间:", randM)
-
-	time.Sleep(time.Duration(randM) * time.Minute)
 }

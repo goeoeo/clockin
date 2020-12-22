@@ -34,6 +34,7 @@ var (
 	}
 	runEnv = "" //环境
 
+	runing = false // 正在运行中
 )
 
 type (
@@ -46,8 +47,13 @@ type (
 )
 
 func Run(env string) (err error) {
-	runEnv = env
+	if runing {
+		fmt.Println("打卡正在运行中")
+		return
+	}
 
+	runEnv = env
+	runing = true
 	for _, v := range clockinCmds {
 		//检查指令环境
 		if v.env != "" && v.env != env {
@@ -71,7 +77,7 @@ func Run(env string) (err error) {
 			v.after()
 		}
 	}
-
+	runing = false
 	log.Println("打卡成功")
 
 	return

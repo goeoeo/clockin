@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# nohub 监听http
+# cd /home/yu/code/clockin &&  nohup ./clockinhttp &
 
 # 定时任务
 # 30 18 * * * /bin/bash /home/yu/code/clockin/bin.sh > /home/yu/code/clockin/log/clockin.log 2>&1
