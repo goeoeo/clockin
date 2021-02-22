@@ -17,12 +17,13 @@ const (
 //模拟命令
 var (
 	clockinCmds = []clockinCmd{
-		{"", printf("点亮屏幕"), "", lightUp},                                 //点亮屏幕
-		{"", printf("进入主页"), "shell input keyevent 3", nil},               //进入主页
-		{"", printf("进入钉钉"), "shell input tap 670 769", sleep(10)},        //进入钉钉
-		{"", printf("检查是否需要登录"), "", isLogin},                             //检查是否需要登录
-		{"", printf("钉钉-工作台"), "shell input tap 530 1840", sleep(5)},      //钉钉-工作台
-		{"", printf("钉钉-工作台-考勤打卡"), "shell input tap 977 1612", sleep(5)}, //钉钉-工作台-考勤打卡
+		{"", printf("点亮屏幕"), "", lightUp},                          //点亮屏幕
+		{"", printf("进入主页"), "shell input keyevent 3", nil},        //进入主页
+		{"", printf("进入钉钉"), "shell input tap 670 769", sleep(10)}, //进入钉钉
+		{"", printf("检查是否需要登录"), "", isLogin},                      //检查是否需要登录
+		{"", printf("钉钉-消息"), "shell input tap 119 1827", sleep(5)},
+		{"", printf("钉钉-智能工作助理"), "shell input tap 587 740", sleep(8)},
+		{"", printf("钉钉-点击打卡"), "shell input tap 148 1688", sleep(5)},
 		{"", printf("等待蓝牙连接"), "", waitBluetooth},
 		{"pro", printf("打卡"), "", clockin},                             //打卡
 		{"pro", printf("打卡后截图，发邮件"), "shell input tap 533 1843", mail}, //打卡后截图，发邮件
@@ -66,7 +67,7 @@ func Run(env string) (err error) {
 
 		if v.cmdString != "" {
 
-			cmd := adbCommand(v.cmdString)
+			cmd := AdbCommand(v.cmdString)
 
 			if _, err = cmd.CombinedOutput(); err != nil {
 				return
@@ -88,7 +89,7 @@ func lightUp() bool {
 
 	for {
 
-		cmd := adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
+		cmd := AdbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
 
 		if _, err := cmd.CombinedOutput(); err != nil {
 			return false
@@ -103,7 +104,7 @@ func lightUp() bool {
 		if int(cos) == 1 {
 			//未被点亮
 			//亮屏
-			cmd := adbCommand("shell input keyevent 26")
+			cmd := AdbCommand("shell input keyevent 26")
 
 			if _, err := cmd.CombinedOutput(); err != nil {
 				return false
@@ -131,13 +132,13 @@ func waitBluetooth() bool {
 		}
 
 		//触摸一下防止熄屏
-		cmd := adbCommand("shell input tap 870 870")
+		cmd := AdbCommand("shell input tap 870 870")
 
 		if _, err := cmd.CombinedOutput(); err != nil {
 			return false
 		}
 
-		cmd = adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
+		cmd = AdbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
 
 		if _, err := cmd.CombinedOutput(); err != nil {
 			return false
@@ -179,14 +180,14 @@ func waitBluetooth() bool {
 //登录检测
 func isLogin() bool {
 	imageControl := new(image.ImageControl)
-	cmd := adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
+	cmd := AdbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
 
 	if _, err := cmd.CombinedOutput(); err != nil {
 		log.Println("err;", err.Error())
 		return false
 	}
 
-	imageControl.Trimming("data/screen.png", "data/login_tmp.png", 0, 900, 1500, 150)
+	imageControl.Trimming("data/screen.png", "data/login_tmp.png", 423, 974, 200, 70)
 
 	cos, err := imgo.CosineSimilarity("data/login.png", "data/login_tmp.png")
 	if err != nil {
@@ -208,14 +209,14 @@ func isLogin() bool {
 func login() {
 
 	//focus
-	cmd := adbCommand("shell input tap 534 817")
+	cmd := AdbCommand("shell input tap 534 817")
 
 	if _, err := cmd.CombinedOutput(); err != nil {
 		fmt.Println("err;", err.Error())
 	}
 
 	//password
-	cmd = adbCommand(`shell input text "chenyu977564830"`)
+	cmd = AdbCommand(`shell input text "chenyu977564830"`)
 
 	if _, err := cmd.CombinedOutput(); err != nil {
 		log.Println("err;", err.Error())
@@ -223,7 +224,7 @@ func login() {
 
 	//login
 
-	cmd = adbCommand("shell input tap 520 1010")
+	cmd = AdbCommand("shell input tap 520 1010")
 
 	if _, err := cmd.CombinedOutput(); err != nil {
 		log.Println("err;", err.Error())
@@ -232,7 +233,7 @@ func login() {
 }
 
 //adb命令
-func adbCommand(cmd string) *exec.Cmd {
+func AdbCommand(cmd string) *exec.Cmd {
 	return exec.Command("/bin/bash", "-c", fmt.Sprintf("%s %s", adb, cmd))
 }
 
@@ -246,7 +247,7 @@ func sleep(i int) func() bool {
 func mail() bool {
 
 	time.Sleep(5 * time.Second)
-	cmd := adbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
+	cmd := AdbCommand("shell screencap -p | sed 's/\r$//' > data/screen.png")
 
 	if _, err := cmd.CombinedOutput(); err != nil {
 		log.Println("err;", err.Error())
@@ -270,7 +271,7 @@ func printf(params string) func() bool {
 func clockin() bool {
 
 	//9点半以前，
-	cmd := adbCommand("shell input tap 530 1162")
+	cmd := AdbCommand("shell input tap 530 1162")
 
 	if _, err := cmd.CombinedOutput(); err != nil {
 		log.Println("err;", err.Error())

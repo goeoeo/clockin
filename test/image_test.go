@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/Comdex/imgo"
 	"github.com/phpdi/ant/image"
+	"github.com/phpdi/clockin/core"
+	"log"
 	"testing"
 )
 
@@ -29,4 +31,18 @@ func TestCosineSimilarity(t *testing.T) {
 	}
 
 	fmt.Println(cos)
+}
+
+func TestImage_srceen(t *testing.T) {
+	cmd := core.AdbCommand("shell screencap -p | sed 's/\r$//' > /home/yu/code/clockin/data/screen.png")
+
+	if _, err := cmd.CombinedOutput(); err != nil {
+		log.Println("err;", err.Error())
+	}
+}
+
+//进入主页
+func TestImage_1(t *testing.T) {
+	imageControl := new(image.ImageControl)
+	imageControl.Trimming("/home/yu/code/clockin/data/screen.png", "/home/yu/code/clockin/data/1.png", 423, 974, 200, 70)
 }
