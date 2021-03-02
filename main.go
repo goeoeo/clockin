@@ -1,11 +1,9 @@
 package main
 
-import (
-	"github.com/phpdi/clockin/core"
-)
+import "github.com/phpdi/clockin/httpserver"
 
 //go build -o clockinbin main.go
 func main() {
-	//httpserver.HttpServer()
-	core.Clockinbin()
+	httpserver.HttpServer()
+	//core.Clockinbin()
 }
