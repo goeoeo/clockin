@@ -145,7 +145,8 @@ func waitBluetooth() bool {
 		}
 
 		//上午判定
-		imageControl.Trimming("data/screen.png", "data/bluetooth_tmp.png", 400, 1300, 350, 350)
+		//imageControl.Trimming("data/screen.png", "data/bluetooth_tmp.png", 400, 1300, 350, 350) //bluetooth_start1.png
+		imageControl.Trimming("data/screen.png", "data/bluetooth_tmp.png", 400, 1200, 350, 100)
 
 		cos, err := imgo.CosineSimilarity("data/bluetooth_start.png", "data/bluetooth_tmp.png")
 		if err != nil {
